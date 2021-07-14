@@ -26,6 +26,7 @@ pub enum TestResult {
 pub enum TestEvent {
     RunAll,
     RunSome,
+    RunWithSkips,
     List,
     Invalid(String),
 }
@@ -37,8 +38,8 @@ impl FromStr for TestEvent {
         match s {
             "" => Ok(TestEvent::RunAll),
             "list" => Ok(TestEvent::List),
-            "-s" => Ok(TestEvent::RunSome),
-            "--skip" => Ok(TestEvent::RunSome),
+            "-s" | "--skip" => Ok(TestEvent::RunWithSkips),
+            "-o" | "--only" => Ok(TestEvent::RunSome),
             _ => Err(ParseError::InvalidEvent),
         }
     }
@@ -70,11 +71,26 @@ pub fn run_test(options: &TestOptions) {
             Err(_) => TestEvent::Invalid(command.to_string()),
         };
         match event {
-            TestEvent::RunSome => {
+            TestEvent::RunWithSkips => {
                 for test_to_skip in &options.command[index + 1..] {
                     let parsed = test_to_skip.trim().parse();
                     match parsed {
                         Ok(number) => to_skip.push(number),
+                        Err(_) => {}
+                    }
+                }
+                events.push(TestEvent::RunWithSkips);
+                break;
+            }
+            TestEvent::RunSome => {
+                to_skip = (0..tests.len()).collect();
+                for test_to_run in &options.command[index + 1..] {
+                    let parsed = test_to_run.trim().parse();
+                    match parsed {
+                        Ok(number) => {
+                            // remove number from to_skip
+                            to_skip.retain(|&x| x != number);
+                        }
                         Err(_) => {}
                     }
                 }
@@ -86,7 +102,9 @@ pub fn run_test(options: &TestOptions) {
     }
     for event in &events {
         match event {
-            TestEvent::RunAll | TestEvent::RunSome => testutils::run_all_tests(&tests, &to_skip),
+            TestEvent::RunAll | TestEvent::RunWithSkips | TestEvent::RunSome => {
+                testutils::run_all_tests(&tests, &to_skip)
+            }
             TestEvent::List => testutils::list_all_tests(&tests),
             TestEvent::Invalid(s) => {
                 println! {"Unknown command {}", s};
