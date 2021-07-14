@@ -3,9 +3,9 @@ use crate::utils::ParseError;
 use std::str::FromStr;
 extern crate structopt;
 use structopt::StructOpt;
-pub mod basic;
-pub mod pfm;
-pub mod testutils;
+mod basic;
+mod pfm;
+mod testutils;
 
 /// Test Struct
 pub struct Test {
@@ -27,6 +27,7 @@ pub enum TestEvent {
     RunAll,
     RunSome,
     List,
+    Invalid(String),
 }
 
 /// Match on each supported event to parse from command line
@@ -66,11 +67,7 @@ pub fn run_test(options: &TestOptions) {
         let possible_event = TestEvent::from_str(command);
         let event = match possible_event {
             Ok(e) => e,
-            Err(_) => {
-                println!("Incorrect parameter");
-                //TODO print usage
-                return;
-            }
+            Err(_) => TestEvent::Invalid(command.to_string()),
         };
         match event {
             TestEvent::RunSome => {
@@ -91,6 +88,10 @@ pub fn run_test(options: &TestOptions) {
         match event {
             TestEvent::RunAll | TestEvent::RunSome => testutils::run_all_tests(&tests, &to_skip),
             TestEvent::List => testutils::list_all_tests(&tests),
+            TestEvent::Invalid(s) => {
+                println! {"Unknown command {}", s};
+                /*TODO print usage..?*/
+            }
         }
     }
 }
