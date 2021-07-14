@@ -15,10 +15,18 @@ pub struct Test {
     pub call: fn() -> bool,
 }
 
+/// TestResult
+pub enum TestResult {
+    Passed,
+    Failed,
+    Skipped,
+}
+
 /// TestEvents
 #[derive(Debug)]
 pub enum TestEvent {
     RunAll,
+    RunSome,
     List,
 }
 
@@ -29,6 +37,8 @@ impl FromStr for TestEvent {
         match s {
             "" => Ok(TestEvent::RunAll),
             "list" => Ok(TestEvent::List),
+            "-s" => Ok(TestEvent::RunSome),
+            "--skip" => Ok(TestEvent::RunSome),
             _ => Err(ParseError::InvalidEvent),
         }
     }
@@ -62,19 +72,36 @@ pub fn make_tests() -> Vec<Test> {
 }
 
 /// Runs all tests and outputs results to stdout
-pub fn run_all_tests(tests: &Vec<Test>) {
+pub fn run_all_tests(tests: &Vec<Test>, to_skip: &Vec<usize>) {
+    let mut should_skip;
     for (index, test) in tests.iter().enumerate() {
-        print!("{:>2}: {:<60} : ", index, test.description);
-        stdout().flush().unwrap();
-        let result = (test.call)();
-        let result_text: String;
-        if result {
-            result_text = "Ok".to_string();
-        } else {
-            result_text = "\x1b[0;31mFAILED!\x1b[0m".to_string();
-        }
-        println!("{}", result_text);
+        should_skip = to_skip.iter().any(|&i| i == index);
+        run_single_test(&test, index, should_skip);
     }
+}
+
+/// Runs a single test (or subtest)
+pub fn run_single_test(test: &Test, index: usize, should_skip: bool) {
+    print!("{:>2}: {:<60} : ", index, test.description);
+    stdout().flush().unwrap();
+    let result_type: TestResult;
+    if should_skip {
+        result_type = TestResult::Skipped;
+    } else {
+        let result = (test.call)();
+        if result {
+            result_type = TestResult::Passed;
+        } else {
+            result_type = TestResult::Failed;
+        }
+    }
+    let result_text: String = match result_type {
+        TestResult::Skipped => "\x1b[0;33mSkip\x1b[0m",
+        TestResult::Passed => "Ok",
+        TestResult::Failed => "\x1b[0;31mFAILED!\x1b[0m",
+    }
+    .to_string();
+    println!("{}", result_text);
 }
 
 /// Lists all tests and outputs results to stdout
@@ -88,15 +115,38 @@ pub fn list_all_tests(tests: &Vec<Test>) {
 pub fn run_test(options: &TestOptions) {
     let tests = make_tests();
     let mut events = Vec::new();
+    let mut to_skip: Vec<usize> = Vec::new();
     if options.command.is_empty() {
         events.push(TestEvent::RunAll);
     }
-    for command in &options.command {
-        events.push(TestEvent::from_str(command).unwrap());
+    for (index, command) in options.command.iter().enumerate() {
+        let possible_event = TestEvent::from_str(command);
+        let event = match possible_event {
+            Ok(e) => e,
+            Err(_) => {
+                println!("Incorrect parameter");
+                //TODO print usage
+                return;
+            }
+        };
+        match event {
+            TestEvent::RunSome => {
+                for test_to_skip in &options.command[index + 1..] {
+                    let parsed = test_to_skip.trim().parse();
+                    match parsed {
+                        Ok(number) => to_skip.push(number),
+                        Err(_) => {}
+                    }
+                }
+                events.push(TestEvent::RunSome);
+                break;
+            }
+            _ => events.push(event),
+        }
     }
     for event in &events {
         match event {
-            TestEvent::RunAll => run_all_tests(&tests),
+            TestEvent::RunAll | TestEvent::RunSome => run_all_tests(&tests, &to_skip),
             TestEvent::List => list_all_tests(&tests),
         }
     }
