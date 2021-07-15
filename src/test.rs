@@ -12,6 +12,8 @@ pub struct Test {
     pub name: String,
     pub description: String,
     pub call: fn() -> bool,
+    pub subtests: Vec<Test>,
+    pub is_subtest: bool,
 }
 
 /// TestResult
@@ -60,7 +62,7 @@ pub struct TestOptions {
 pub fn run_test(options: &TestOptions) {
     let tests = testutils::make_tests();
     let mut events = Vec::new();
-    let mut to_skip: Vec<usize> = Vec::new();
+    let mut to_skip: Vec<String> = Vec::new();
     if options.command.is_empty() {
         events.push(TestEvent::RunAll);
     }
@@ -83,13 +85,13 @@ pub fn run_test(options: &TestOptions) {
                 break;
             }
             TestEvent::RunSome => {
-                to_skip = (0..tests.len()).collect();
+                to_skip = (0..tests.len()).map(|x| x.to_string()).collect();
                 for test_to_run in &options.command[index + 1..] {
-                    let parsed = test_to_run.trim().parse();
+                    let parsed: Result<String, _> = test_to_run.trim().parse();
                     match parsed {
                         Ok(number) => {
                             // remove number from to_skip
-                            to_skip.retain(|&x| x != number);
+                            to_skip.retain(|x| *x != number);
                         }
                         Err(_) => {}
                     }
