@@ -6,10 +6,10 @@
 // Disable cargo build warnings created due to using bindgen.
 #![allow(dead_code)]
 
-mod fd;
+pub mod fd;
 pub mod open;
-mod sys;
-mod utils;
+pub mod sys;
+pub mod utils;
 
 pub fn perf_event_hello() {
     println!("hello from your friendly perf_event file");

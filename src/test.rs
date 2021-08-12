@@ -11,6 +11,7 @@
 
 mod basic;
 mod events;
+mod fd;
 mod paranoid;
 mod pfm;
 mod testutils;

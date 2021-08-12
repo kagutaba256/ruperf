@@ -152,7 +152,7 @@ impl FileDesc {
 
 /// For documentation on `perf_event_open()`
 /// system call, see the Linux man page.
-fn perf_event_open(
+pub fn perf_event_open(
     event: &perf_event_attr,
     pid: pid_t,
     cpu: i32,

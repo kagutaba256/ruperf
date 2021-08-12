@@ -6,6 +6,7 @@
 
 use crate::test::basic;
 use crate::test::events;
+use crate::test::fd;
 use crate::test::paranoid;
 use crate::test::pfm;
 use crate::test::RunSettings;
@@ -26,6 +27,7 @@ pub fn make_tests() -> Vec<Test> {
         pfm::test_check_for_libpfm4(),
         paranoid::test_check_paranoid_flag(),
         events::test_events(),
+        fd::test_fd(),
     ];
     tests
 }
