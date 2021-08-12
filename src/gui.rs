@@ -1,11 +1,13 @@
-//! Gui driver
-use iced::{
-    executor, pane_grid,
-    widget::{
-        Button, Column, Container, PaneGrid, PickList, Row, Rule, Scrollable, Text, TextInput,
-    },
-    Align, Application, Clipboard, Command, Element, Length, Settings,
-};
+//! # GUI driver.
+//! <p> Usage: <em> ruperf gui [COMMAND] </em>
+//! where COMMAND is one of: </p>
+//! <ul>
+//! <li>test</li>
+//! <li>stat</li>
+//! </ul>
+
+extern crate structopt;
+use structopt::StructOpt;
 
 mod pane_content;
 mod perf_event;
@@ -13,13 +15,20 @@ mod save_state;
 mod state;
 mod style;
 
+use iced::{
+    executor, pane_grid,
+    widget::{
+        Button, Column, Container, PaneGrid, PickList, Row, Rule, Scrollable, Text, TextInput,
+    },
+    Align, Application, Clipboard, Command, Element, Length, Settings,
+};
 use pane_content::*;
 use perf_event::*;
 use save_state::*;
 use state::*;
 
 /// Run the Gui Launcher
-pub fn run_gui() -> iced::Result {
+pub fn run_gui(options: &GuiOptions) -> iced::Result {
     Gui::run(Settings::default())
 }
 
@@ -28,6 +37,10 @@ enum Gui {
     Loading,
     Loaded(State),
 }
+
+/// Configuration settings for running the GUI
+#[derive(Debug, StructOpt)]
+pub struct GuiOptions {}
 
 /// Messages to be sent to the parent widget from
 /// other child widgets, and consumed on update
@@ -41,6 +54,7 @@ enum Message {
     CommandSelected(PerfEvent),
     LaunchCommand,
 }
+
 /// Provide methods for Gui renderer
 impl Application for Gui {
     type Executor = executor::Default;

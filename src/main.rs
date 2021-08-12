@@ -1,7 +1,7 @@
-//! #  Sample driver for perf-rust tool
-//! <p> Usage: <em> perf-rust [COMMAND] [OPTION] </em>
+//! # Main driver.
+//! <p> Usage: <em> ruperf [COMMAND] [OPTION] </em>
 //! where COMMAND is one of: </p>
-//!<ul>
+//! <ul>
 //! <li>test</li>
 //! <li>stat</li>
 //! <li>gui</li>
@@ -14,13 +14,12 @@ mod stat;
 mod test;
 mod utils;
 
+extern crate structopt;
 use event::*;
 use gui::*;
 use stat::*;
-use test::*;
-extern crate structopt;
-
 use structopt::StructOpt;
+use test::*;
 
 /// Define command line options.
 #[derive(Debug, StructOpt)]
@@ -45,16 +44,16 @@ enum Opt {
         name = "gui",
         about = "Launches gui"
     )]
-    Gui(TestOptions),
+    Gui(GuiOptions),
 }
 
 fn main() {
     let opt = Opt::from_args();
     match opt {
-        Opt::Stat(x) => run_stat(&x),
+        Opt::Stat(x) => run_stat(x),
         Opt::Test(x) => run_test(&x),
         Opt::Gui(x) => {
-            run_gui().unwrap();
+            run_gui(&x).unwrap();
         }
     }
 }
