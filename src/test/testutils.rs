@@ -1,8 +1,12 @@
-//!
-//!
-//!
+//! `testutils.rs` provides utility functions used for the
+//! test program. It provides a function that makes a list
+//! of the tests from this directory, as well as a function
+//! that runs all the tests in this directory and collects
+//! the results.
 
 use crate::test::basic;
+use crate::test::counts;
+use crate::test::events;
 use crate::test::paranoid;
 use crate::test::pfm;
 use crate::test::RunSettings;
@@ -22,6 +26,8 @@ pub fn make_tests() -> Vec<Test> {
         basic::test_with_pointless_subtests(),
         pfm::test_check_for_libpfm4(),
         paranoid::test_check_paranoid_flag(),
+        events::test_events(),
+        counts::test_counts(),
     ];
     tests
 }
@@ -32,10 +38,11 @@ pub fn run_all_tests(tests: &[Test], to_skip: &[String], settings: &RunSettings)
     let mut tests_passed = 0;
     let mut tests_failed = 0;
     let mut tests_skipped = 0;
-    let mut additional_info: Vec<String> = Vec::new();
+    let mut additional_info: Vec<String>;
     let mut results_as_json: Vec<serde_json::Value> = Vec::new();
     if settings.json {}
     for (index, test) in tests.iter().enumerate() {
+        additional_info = Vec::new();
         should_skip = to_skip.iter().any(|i| *i == index.to_string());
         let result = run_single_test(test, index, should_skip, "".to_string(), settings);
         if settings.json {

@@ -10,6 +10,8 @@
 //! </ul>
 
 mod basic;
+mod counts;
+mod events;
 mod paranoid;
 mod pfm;
 mod testutils;
